@@ -1,6 +1,12 @@
 from setting import *
 import pygame
 from environment import KebabHunterEnvironment
+from q_learning import QLearningAgent
+
+def select_q_table_file():
+    """Prompts the user to input the Q-table file path."""
+    file_path = "saves/run3/table/q_table.pkl"
+    return file_path
 
 def main_menu():
     """Displays the main menu and allows the user to select the mode of play."""
@@ -85,7 +91,45 @@ def main():
         # Close the environment
         env.close()
     elif mode == "ai":
-        print("Q-learning mode selected. Implement Q-learning logic here.")
+        q_table_file = select_q_table_file()
+        if not q_table_file:
+            print("No Q-table file selected. Exiting AI mode.")
+            return
+
+        # Initialize the environment and agent
+        env = KebabHunterEnvironment(grid_size=5, cell_size=100, image_dir=IMAGE_DIR)
+        state_size = len(env.get_state())
+        action_size = 4  # Up, Down, Left, Right
+        agent = QLearningAgent(state_size, action_size)
+        agent.load(q_table_file)
+
+        clock = pygame.time.Clock()
+        running = True
+
+        # Reset the environment
+        state = env.reset()
+
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+            # AI chooses an action
+            action = agent.choose_action(state)
+            state, reward, done = env.step(action)
+            print(f"State: {state}, Reward: {reward}, Done: {done}")
+            if done:
+                print("Episode finished! Resetting environment...")
+                state = env.reset()
+
+            # Render the environment
+            env.render()
+
+            # Cap the frame rate
+            clock.tick(10)
+
+        # Close the environment
+        env.close()
 
 if __name__ == "__main__":
     main()
