@@ -3,11 +3,13 @@ import random
 import pygame
 
 class KebabHunterEnvironment:
-    def __init__(self, grid_size=5, cell_size=100):
+    def __init__(self, grid_size=5, cell_size=100, image_dir="images"):
         self.grid_size = grid_size
         self.cell_size = cell_size
         self.window_size = grid_size * cell_size
         self.num_bombs = random.randint(1, 3)  # Random number of bombs (1 to 3)
+        self.last_moves = [None, None]  # Track the last two moves
+        self.image_dir = image_dir
         self.reset()
 
         # Initialize pygame
@@ -16,11 +18,11 @@ class KebabHunterEnvironment:
         pygame.display.set_caption("Kebab Hunter")
 
         # Load images
-        self.robot_image = pygame.image.load("images/robot.png")
+        self.robot_image = pygame.image.load(f"{self.image_dir}/robot.png")
         self.robot_image = pygame.transform.scale(self.robot_image, (cell_size, cell_size))
-        self.kebab_image = pygame.image.load("images/kebab.png")
+        self.kebab_image = pygame.image.load(f"{self.image_dir}/kebab.png")
         self.kebab_image = pygame.transform.scale(self.kebab_image, (cell_size, cell_size))
-        self.bomb_image = pygame.image.load("images/bomb.png")
+        self.bomb_image = pygame.image.load(f"{self.image_dir}/bomb.png")
         self.bomb_image = pygame.transform.scale(self.bomb_image, (cell_size, cell_size))
 
     def reset(self):
@@ -36,13 +38,33 @@ class KebabHunterEnvironment:
                 bomb_position = [random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1)]
             self.bomb_positions.append(bomb_position)
         self.done = False
+        self.last_moves = [None, None]  # Reset last moves
         return self.get_state()
 
     def get_state(self):
-        """Returns the current state as a tuple of robot, kebab, and bomb positions."""
-        state = tuple(self.robot_position + self.kebab_position)
+        """Returns the current state as a tuple of kebab direction, danger positions, and last two moves."""
+        # Direction of the kebab relative to the robot
+        kebab_direction = [
+            int(self.kebab_position[0] < self.robot_position[0]),  # Kebab is above
+            int(self.kebab_position[0] > self.robot_position[0]),  # Kebab is below
+            int(self.kebab_position[1] > self.robot_position[1]),  # Kebab is to the right
+            int(self.kebab_position[1] < self.robot_position[1])   # Kebab is to the left
+        ]
+
+        # Danger positions (bombs) relative to the robot
+        danger_positions = [0, 0, 0, 0]  # [Above, Below, Right, Left]
         for bomb_position in self.bomb_positions:
-            state += tuple(bomb_position)
+            if bomb_position[0] == self.robot_position[0] - 1 and bomb_position[1] == self.robot_position[1]:
+                danger_positions[0] = 1  # Danger above
+            if bomb_position[0] == self.robot_position[0] + 1 and bomb_position[1] == self.robot_position[1]:
+                danger_positions[1] = 1  # Danger below
+            if bomb_position[1] == self.robot_position[1] + 1 and bomb_position[0] == self.robot_position[0]:
+                danger_positions[2] = 1  # Danger to the right
+            if bomb_position[1] == self.robot_position[1] - 1 and bomb_position[0] == self.robot_position[0]:
+                danger_positions[3] = 1  # Danger to the left
+
+        # Combine state components
+        state = tuple(kebab_direction + danger_positions + self.last_moves)
         return state
 
     def step(self, action):
@@ -64,15 +86,19 @@ class KebabHunterEnvironment:
         elif action == 3 and self.robot_position[1] < self.grid_size - 1:  # Right
             self.robot_position[1] += 1
 
+        # Update last moves
+        self.last_moves.pop(0)
+        self.last_moves.append(action)
+
         # Calculate reward
         if self.robot_position == self.kebab_position:
-            reward = 10
+            reward = 20  # Increased reward for collecting a kebab
             self.done = True
         elif self.robot_position in self.bomb_positions:
-            reward = -1
+            reward = -10  # Increased penalty for hitting a bomb
             self.done = True
         else:
-            reward = -1
+            reward = -0.1  # Small penalty for each step to encourage faster completion
 
         return self.get_state(), reward, self.done
 

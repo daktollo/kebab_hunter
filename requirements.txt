@@ -1,2 +1,6 @@
 numpy
 pygame
+torch
+torchvision
+tensorboard
+torch-tb-profiler

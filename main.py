@@ -1,3 +1,4 @@
+from setting import *
 import pygame
 from environment import KebabHunterEnvironment
 
@@ -43,7 +44,7 @@ def main():
     mode = main_menu()
     if mode == "human":
         # Initialize the environment
-        env = KebabHunterEnvironment(grid_size=5, cell_size=100)
+        env = KebabHunterEnvironment(grid_size=5, cell_size=100, image_dir=IMAGE_DIR)
         clock = pygame.time.Clock()
         running = True
 
