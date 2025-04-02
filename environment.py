@@ -7,6 +7,7 @@ class KebabHunterEnvironment:
         self.grid_size = grid_size
         self.cell_size = cell_size
         self.window_size = grid_size * cell_size
+        self.num_bombs = random.randint(1, 3)  # Random number of bombs (1 to 3)
         self.reset()
 
         # Initialize pygame
@@ -28,12 +29,21 @@ class KebabHunterEnvironment:
         self.kebab_position = [random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1)]
         while self.kebab_position == self.robot_position:
             self.kebab_position = [random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1)]
+        self.bomb_positions = []
+        for _ in range(self.num_bombs):
+            bomb_position = [random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1)]
+            while bomb_position == self.robot_position or bomb_position == self.kebab_position or bomb_position in self.bomb_positions:
+                bomb_position = [random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1)]
+            self.bomb_positions.append(bomb_position)
         self.done = False
         return self.get_state()
 
     def get_state(self):
-        """Returns the current state as a tuple of robot and kebab positions."""
-        return tuple(self.robot_position + self.kebab_position)
+        """Returns the current state as a tuple of robot, kebab, and bomb positions."""
+        state = tuple(self.robot_position + self.kebab_position)
+        for bomb_position in self.bomb_positions:
+            state += tuple(bomb_position)
+        return state
 
     def step(self, action):
         """
@@ -58,13 +68,16 @@ class KebabHunterEnvironment:
         if self.robot_position == self.kebab_position:
             reward = 10
             self.done = True
+        elif self.robot_position in self.bomb_positions:
+            reward = -1
+            self.done = True
         else:
             reward = -1
 
         return self.get_state(), reward, self.done
 
     def render(self):
-        """Renders the grid with the robot and kebab positions using pygame."""
+        """Renders the grid with the robot, kebab, and bomb positions using pygame."""
         self.screen.fill((255, 255, 255))  # White background
 
         # Draw grid
@@ -79,6 +92,11 @@ class KebabHunterEnvironment:
         # Draw kebab
         kebab_x, kebab_y = self.kebab_position[1] * self.cell_size, self.kebab_position[0] * self.cell_size
         self.screen.blit(self.kebab_image, (kebab_x, kebab_y))
+
+        # Draw bombs
+        for bomb_position in self.bomb_positions:
+            bomb_x, bomb_y = bomb_position[1] * self.cell_size, bomb_position[0] * self.cell_size
+            self.screen.blit(self.bomb_image, (bomb_x, bomb_y))
 
         # Update display
         pygame.display.flip()
