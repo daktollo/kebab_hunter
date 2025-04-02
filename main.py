@@ -5,7 +5,7 @@ from q_learning import QLearningAgent
 
 def select_q_table_file():
     """Prompts the user to input the Q-table file path."""
-    file_path = "saves/run3/table/q_table.pkl"
+    file_path = "saves/run7/table/q_table.pkl"
     return file_path
 
 def main_menu():
@@ -48,9 +48,10 @@ def main_menu():
 
 def main():
     mode = main_menu()
+    game_speed = 1  # Oyun hızını kontrol eden değişken
     if mode == "human":
         # Initialize the environment
-        env = KebabHunterEnvironment(grid_size=5, cell_size=100, image_dir=IMAGE_DIR)
+        env = KebabHunterEnvironment()
         clock = pygame.time.Clock()
         running = True
 
@@ -86,7 +87,7 @@ def main():
             env.render()
 
             # Cap the frame rate
-            clock.tick(10)
+            clock.tick(game_speed)  # Oyun hızını kontrol eden satır
 
         # Close the environment
         env.close()
@@ -97,7 +98,7 @@ def main():
             return
 
         # Initialize the environment and agent
-        env = KebabHunterEnvironment(grid_size=5, cell_size=100, image_dir=IMAGE_DIR)
+        env = KebabHunterEnvironment()
         state_size = len(env.get_state())
         action_size = 4  # Up, Down, Left, Right
         agent = QLearningAgent(state_size, action_size)
@@ -126,7 +127,7 @@ def main():
             env.render()
 
             # Cap the frame rate
-            clock.tick(10)
+            clock.tick(game_speed)  # Oyun hızını kontrol eden satır
 
         # Close the environment
         env.close()
